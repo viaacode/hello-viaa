@@ -1,0 +1,69 @@
+image: docker:git
+services:
+  - docker:dind
+
+stages:
+  - build
+  - test
+  - release
+
+variables:
+  CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest
+  CONTAINER_QAS_IMAGE: $CI_REGISTRY_IMAGE/qas:latest
+  CONTAINER_PRD_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+
+before_script:
+  - docker -v && (echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin) || echo 'Docker not loaded'
+
+build:
+  stage: build
+  script:
+    - docker pull $CONTAINER_IMAGE || true
+    - docker build --cache-from $CONTAINER_IMAGE -t $CONTAINER_IMAGE . --target Test
+    - docker push $CONTAINER_IMAGE
+
+tests:
+  stage: test
+  image: $CONTAINER_IMAGE
+  # Add services if needed
+  # services:
+  #   - postgres:9.6
+  variables:
+    HELLO_WORLD: Hello Gitlab!
+
+# You can add additional syntax checks
+# syntax:
+#   stage: test
+#   image: $CONTAINER_IMAGE
+#   script:
+#     - rubocop
+#   allow_failure: true
+#   except:
+#     - tags
+
+# the environment variables are for Gitlab https://gitlab.com/viaa-catalogus/syncrator/environments
+# RUBY_ENV is voor in de build onderscheid te maken tussen add_(development_)dependency in de gemspec
+release_qas:
+  stage: release
+  # Optional: define Gitlab environments
+  # environment:
+  #   name: qas
+  #   url: https://my_hello_world_app.be
+  script:
+    - docker pull $CONTAINER_QAS_IMAGE || true
+    - docker build --cache-from $CONTAINER_QAS_IMAGE -t $CONTAINER_QAS_IMAGE .
+    - docker push $CONTAINER_QAS_IMAGE
+  only:
+    - develop
+    - /^release\//
+    - /^hotfix\//
+    - /^feauture\//
+
+release_production:
+  stage: release
+  when: manual
+  script:
+    - docker build -t $CONTAINER_RELEASE_IMAGE .
+    - docker push $CONTAINER_RELEASE_IMAGE
+  only:
+    - tags
