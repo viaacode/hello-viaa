@@ -1,0 +1,35 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+labels:
+  template: init # Refers to script that created it
+  app: ${APP_NAME}
+  env: ${OS_ENV}
+objects:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: ${APP_NAME}-${OS_ENV}
+  spec:
+    clusterIP: None
+    ports:
+    - name: http
+      port: ${{APP_PORT}}
+      protocol: TCP
+      targetPort: ${{APP_PORT}}
+    selector:
+      deploymentconfig: ${APP_NAME}-${OS_ENV}
+    sessionAffinity: None
+    type: ClusterIP
+parameters:
+- description: The Openshift environment
+  displayName: The Openshift environment
+  name: OS_ENV
+  required: true
+- description: The app name
+  displayName: The app name
+  name: APP_NAME
+  required: true
+- description: The app's port
+  displayName: APP_PORT
+  name: APP_PORT
+  required: true

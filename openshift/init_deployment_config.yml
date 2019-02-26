@@ -1,0 +1,112 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+labels:
+  template: init # Refers to script that created it
+  app: ${APP_NAME}
+  env: ${OS_ENV}
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: ${APP_NAME}-${OS_ENV}
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: ${APP_NAME}-${OS_ENV}
+    strategy:
+      activeDeadlineSeconds: 21600
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          deploymentconfig: ${APP_NAME}-${OS_ENV}
+          app: ${APP_NAME}
+          env: ${OS_ENV}
+          template: init
+      spec:
+        containers:
+          - name: ${APP_NAME}-${OS_ENV}
+            image: ${APP_NAME}:stable
+            envFrom:
+              - secretRef:
+                  name: ${APP_NAME}-${OS_ENV}-secrets
+              - configMapRef:
+                  name: ${APP_NAME}-${OS_ENV}
+            imagePullPolicy: IfNotPresent
+            lifecycle:
+              preStop:
+                exec:
+                  command:
+                  - /bin/sleep
+                  - "30"
+            livenessProbe:
+              failureThreshold: 3
+              httpGet:
+                path: /
+                port: ${{APP_PORT}}
+                scheme: HTTP
+              initialDelaySeconds: 90
+              periodSeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 2
+            ports:
+            - protocol: TCP
+              containerPort: ${{APP_PORT}}
+            readinessProbe:
+              failureThreshold: 3
+              httpGet:
+                path: /
+                port: ${{APP_PORT}}
+                scheme: HTTP
+              initialDelaySeconds: 30
+              periodSeconds: 30
+              successThreshold: 1
+              timeoutSeconds: 2
+            resources: {}
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: false # Set to true for non prd for ease
+        containerNames:
+          - ${APP_NAME}-${OS_ENV}
+        from:
+          kind: ImageStreamTag
+          name: ${APP_NAME}:stable
+          namespace: ${OS_NAMESPACE}
+parameters:
+- description: The app's port
+  displayName: APP_PORT
+  name: APP_PORT
+  required: true
+- description: The deployment liveness/readiness path
+  displayName: APP_LIVENESS_PATH
+  name: APP_LIVENESS_PATH
+  required: true
+  value: /
+- description: The Openshift project namespace
+  displayName: OS_NAMESPACE
+  name: OS_NAMESPACE
+  required: true
+- description: The Openshift environment
+  displayName: The Openshift environment
+  name: OS_ENV
+  required: true
+- description: The app name
+  displayName: The app name
+  name: APP_NAME
+  required: true

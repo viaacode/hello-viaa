@@ -1,0 +1,45 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+labels:
+  template: init # Refers to script that created it
+  app: ${APP_NAME}
+  env: ${OS_ENV}
+objects:
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: ${APP_NAME}
+  spec:
+    lookupPolicy:
+      local: true
+    tags:
+      - from:
+          kind: DockerImage
+          name: registry.gitlab.com/${GITLAB_SPACE}/qas:latest
+        importPolicy:
+          scheduled: true # This pulls new images from Gitlab CI if available
+        name: latest # used for qas deployment
+      - from:
+          kind: DockerImage
+          name: registry.gitlab.com/${GITLAB_SPACE}/master:${STABLE_TAG}
+        importPolicy:
+          scheduled: true
+        name: stable # used for prd deployment
+parameters:
+- description: The Openshift environment
+  displayName: The Openshift environment
+  name: OS_ENV
+  required: true
+- description: The app name
+  displayName: The app name
+  name: APP_NAME
+  required: true
+- description: The gitlab space e.g 'viaa-code/hello-viaa'
+  displayName: GITLAB_SPACE
+  name: GITLAB_SPACE
+  required: true
+- description: The stable tag, e.g. 'v2.3'
+  displayName: STABLE_TAG
+  name: STABLE_TAG
+  required: true
+
