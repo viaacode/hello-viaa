@@ -1,7 +1,11 @@
 ARG RUBY_IMAGE=ruby:2.6-alpine
 
 # BUILD_PACKAGES, add if needed: git postgresql-dev tzdata ...
-ARG BUILD_PACKAGES='build-base git'
+ARG BUILD_PACKAGES='build-base'
+
+# Required packages for vanilla Rails API 5.2.2
+# ARG BUILD_PACKAGES='build-base sqlite-dev'
+# ARG BUILD_TEST_PACKAGES='build-base'
 
 # If needed add BUILD_TEST_PACKAGES and TEST_PACKAGES
 
@@ -32,6 +36,9 @@ RUN bundle config --global frozen 1 \
 # Stage: TestBuilder (production + test build)
 ##########################################
 FROM $RUBY_IMAGE as TestBuilder
+
+# ARG BUILD_TEST_PACKAGES
+# RUN apk add --update --no-cache $BUILD_TEST_PACKAGES
 
 # Copy gems from Builder
 COPY --from=Builder /usr/local/bundle/ /usr/local/bundle/
