@@ -13,7 +13,7 @@ Don't forget to change the variables in the init.sh script.
 
 ### Manual:
 
-For all non critical environments: set ImageStream to 'latest' instead of 'stable' and set automatic: true manually in the deploymentConfig->ImageChange trigger via Openshift web interface (edit YAML).
+For all non critical environments: set ImageStream to 'latest' instead of 'stable' and set automatic: true manually in the deploymentConfig->ImageChange trigger via Openshift web interface (edit YAML or just edit).
 
 ### Routing:
 
