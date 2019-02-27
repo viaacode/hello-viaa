@@ -17,4 +17,4 @@ For all non critical environments: set ImageStream to 'latest' instead of 'stabl
 
 ### Routing:
 
-This is done outside of Openshift. To see if the app works look at the pod created by the deployment config and check the logs. The liveness probe should trigger the logging of 'Hello ...'.
+This is done outside of Openshift (ask devops teams). To see if the app works you can create a temporary route to the service in Openshift and visit the url.
