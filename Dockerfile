@@ -6,6 +6,7 @@ ARG BUILD_PACKAGES='build-base'
 # Required packages for vanilla Rails API 5.2.2
 # ARG BUILD_PACKAGES='build-base sqlite-dev'
 # ARG BUILD_TEST_PACKAGES='build-base'
+# ARG TEST_PACKAGES='tzdata sqlite-dev'
 
 # If needed add BUILD_TEST_PACKAGES and TEST_PACKAGES
 
@@ -18,7 +19,6 @@ FROM $RUBY_IMAGE as Builder
 
 # Redeclare ARG otherwise it's empty after FROM
 ARG BUILD_PACKAGES
-
 RUN apk add --update --no-cache $BUILD_PACKAGES
 
 COPY Gemfile* /
@@ -60,6 +60,9 @@ RUN bundle config --delete without \
 ##########################################
 FROM $RUBY_IMAGE as Test
 
+# ARG TEST_PACKAGES
+# RUN apk add --update --no-cache $TEST_PACKAGES
+
 # Add userapp for security reasons (no root access), only execute code after this
 # Add group with GID 1000 name app, adduser with UID 1000 name app to group app
 RUN addgroup -g 1000 -S app && adduser -u 1000 -S app -G app
@@ -82,8 +85,6 @@ FROM $RUBY_IMAGE as Server
 
 # Redeclare ARG otherwise it's empty after FROM
 ARG RUN_PACKAGES
-
-# Add Alpine packages
 RUN apk add --update --no-cache $RUN_PACKAGES
 
 # Add userapp for security reasons (no root access), only execute code after this
