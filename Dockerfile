@@ -63,8 +63,8 @@ COPY --chown=app:app . /app
 
 WORKDIR /app
 
-# Test script, change if needed
-ENTRYPOINT ["rake", "test", "-v"]
+# Test script, change if needed, CMD instead of ENTRYPOINT so it can be run by Gitlab Docker executor and substituted for e.g. syntax tests
+CMD ["rake", "test"]
 
 # Stage: Server (production, or local server)
 ##########################################

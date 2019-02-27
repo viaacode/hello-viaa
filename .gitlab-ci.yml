@@ -30,6 +30,8 @@ tests:
   #   - postgres:9.6
   variables:
     HELLO_WORLD: Hello Gitlab!
+  script:
+    - rake test
 
 # You can add additional syntax checks
 # syntax:

@@ -14,7 +14,6 @@ class MyTest < MiniTest::Test
     get '/'
     assert last_response.ok?
     hello_world = ENV['HELLO_WORLD'] || 'Hello World!'
-    puts hello_world
     assert_equal hello_world, last_response.body
   end
 end

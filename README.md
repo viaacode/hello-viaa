@@ -48,3 +48,40 @@ docker run --rm -t -i gitlab/gitlab-runner --help
 ### Openshift
 
 Openshift is based on kubernetes. It is used to deploy the Docker containers. The openshift/init.sh script initiates the Openshift environment. See [confluence](https://viaadocumentation.atlassian.net/wiki/spaces/SI/pages/938147860/Openshift+basics+for+application+developers).
+
+### Using the template
+
+#### Git
+
+```bash
+git clone *url_of_this_repo* *name_of_your_app*
+git checkout -b master
+git merge ruby
+git branch -d ruby
+git remote remove origin
+git remote add *url_of_your_git_repo*
+# Make sure git flow is installed
+# Branch name for production releases: [master]
+# Branch name for "next release" development: [develop]
+# Feature branches? [feature/]
+# Release branches? [release/]
+# Hotfix branches? [hotfix/]
+# Support branches? [support/]
+# Version tag prefix? [] v
+git flow init
+```
+#### Openshift
+
+Look at init.sh and openshift/README.md. Change the values.
+
+#### RVM
+
+Change .ruby-gemset to app name
+
+#### Gitignore
+
+Add **/*.secrets to gitignore.
+
+
+
+
