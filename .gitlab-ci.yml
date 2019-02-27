@@ -59,7 +59,7 @@ release_qas:
     - develop
     - /^release\//
     - /^hotfix\//
-    - /^feauture\//
+    - /^feature\//
 
 release_production:
   stage: release
