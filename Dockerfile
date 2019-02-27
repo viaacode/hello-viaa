@@ -12,6 +12,9 @@ ARG RUN_PACKAGES='tzdata'
 ##########################################
 FROM $RUBY_IMAGE as Builder
 
+# Redeclare ARG otherwise it's empty after FROM
+ARG BUILD_PACKAGES
+
 RUN apk add --update --no-cache $BUILD_PACKAGES
 
 COPY Gemfile* /
@@ -69,6 +72,9 @@ CMD ["rake", "test"]
 # Stage: Server (production, or local server)
 ##########################################
 FROM $RUBY_IMAGE as Server
+
+# Redeclare ARG otherwise it's empty after FROM
+ARG RUN_PACKAGES
 
 # Add Alpine packages
 RUN apk add --update --no-cache $RUN_PACKAGES
