@@ -80,7 +80,7 @@ Change .ruby-gemset to app name
 
 #### Gitignore
 
-Add \**/*.secrets to gitignore. And remove it from git.
+Add \*\*/\*.secrets to gitignore. And remove it from git.
 
 ```bash
 git rm openshift/params/qas.secrets --cached
