@@ -6,9 +6,8 @@ ARG BUILD_PACKAGES='build-base'
 # Required packages for vanilla Rails API 5.2.2
 # ARG BUILD_PACKAGES='build-base sqlite-dev'
 # ARG BUILD_TEST_PACKAGES='build-base'
-# ARG TEST_PACKAGES='tzdata sqlite-dev'
-
-# If needed add BUILD_TEST_PACKAGES and TEST_PACKAGES
+# ARG TEST_PACKAGES='tzdata sqlite-libs'
+# ARG RUN_PACKAGES='tzdata sqlite-libs'
 
 # RUN_PACKAGES, add if needed: postgresql-client ...
 ARG RUN_PACKAGES='tzdata'
