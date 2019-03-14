@@ -65,7 +65,7 @@ release_production:
   stage: release
   when: manual
   script:
-    - docker build -t $CONTAINER_RELEASE_IMAGE .
-    - docker push $CONTAINER_RELEASE_IMAGE
+    - docker build -t $CONTAINER_PRD_IMAGE .
+    - docker push $CONTAINER_PRD_IMAGE
   only:
     - tags
