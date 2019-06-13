@@ -8,6 +8,9 @@ stages:
   - release
 
 variables:
+  CONTAINER_BUILDER_IMAGE: $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_NAME
+  CONTAINER_TEST_BUILDER_IMAGE: $CI_REGISTRY_IMAGE/testbuilder:$CI_COMMIT_REF_NAME
+  CONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE/test:$CI_COMMIT_REF_NAME
   CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest
   CONTAINER_QAS_IMAGE: $CI_REGISTRY_IMAGE/qas:latest
   CONTAINER_PRD_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
@@ -18,13 +21,19 @@ before_script:
 build:
   stage: build
   script:
-    - docker pull $CONTAINER_IMAGE || true
-    - docker build --cache-from $CONTAINER_IMAGE -t $CONTAINER_IMAGE . --target Test
-    - docker push $CONTAINER_IMAGE
+    - docker pull $CONTAINER_BUILDER_IMAGE || true
+    - docker pull $CONTAINER_TEST_BUILDER_IMAGE || true
+    - docker pull $CONTAINER_TEST_IMAGE || true
+    - docker build --cache-from $CONTAINER_BUILDER_IMAGE -t $CONTAINER_BUILDER_IMAGE --target Builder .
+    - docker build --cache-from $CONTAINER_BUILDER_IMAGE,$CONTAINER_TEST_BUILDER_IMAGE -t $CONTAINER_TEST_BUILDER_IMAGE --target TestBuilder .
+    - docker build --cache-from $CONTAINER_BUILDER_IMAGE,$CONTAINER_TEST_BUILDER_IMAGE,$CONTAINER_TEST_IMAGE -t $CONTAINER_TEST_IMAGE --target Test .
+    - docker push $CONTAINER_BUILDER_IMAGE
+    - docker push $CONTAINER_TEST_BUILDER_IMAGE
+    - docker push $CONTAINER_TEST_IMAGE
 
 tests:
   stage: test
-  image: $CONTAINER_IMAGE
+  image: $CONTAINER_TEST_IMAGE
   # Add services if needed
   # services:
   #   - postgres:9.6
@@ -52,8 +61,11 @@ release_qas:
   #   name: qas
   #   url: https://my_hello_world_app.be
   script:
+    - docker pull $CONTAINER_BUILDER_IMAGE || true
+    - docker pull $CONTAINER_TEST_BUILDER_IMAGE || true
+    - docker pull $CONTAINER_TEST_IMAGE || true
     - docker pull $CONTAINER_QAS_IMAGE || true
-    - docker build --cache-from $CONTAINER_QAS_IMAGE -t $CONTAINER_QAS_IMAGE .
+    - docker build --cache-from $CONTAINER_BUILDER_IMAGE,$CONTAINER_TEST_BUILDER_IMAGE,$CONTAINER_TEST_IMAGE,$CONTAINER_QAS_IMAGE -t $CONTAINER_QAS_IMAGE .
     - docker push $CONTAINER_QAS_IMAGE
   only:
     - develop
@@ -65,7 +77,11 @@ release_production:
   stage: release
   when: manual
   script:
-    - docker build -t $CONTAINER_PRD_IMAGE .
+    - docker pull $CONTAINER_BUILDER_IMAGE || true
+    - docker pull $CONTAINER_TEST_BUILDER_IMAGE || true
+    - docker pull $CONTAINER_TEST_IMAGE || true
+    - docker pull $CONTAINER_QAS_IMAGE || true
+    - docker build --cache-from $CONTAINER_BUILDER_IMAGE,$CONTAINER_TEST_BUILDER_IMAGE,$CONTAINER_TEST_IMAGE,$CONTAINER_QAS_IMAGE -t $CONTAINER_PRD_IMAGE .
     - docker push $CONTAINER_PRD_IMAGE
   only:
     - tags
