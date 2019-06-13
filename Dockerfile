@@ -16,6 +16,10 @@ ARG RUN_PACKAGES='tzdata'
 ##########################################
 FROM $RUBY_IMAGE as Builder
 
+# https://github.com/moby/moby/issues/34715, bryanlarsen commented on 12 Sep 2018, must be unique per stage
+# Line after FROM should be unique per stage so that multiple image --cache-from in docker build works correctly
+RUN echo '=== Builder ==='
+
 # Redeclare ARG otherwise it's empty after FROM
 ARG BUILD_PACKAGES
 RUN apk add --update --no-cache $BUILD_PACKAGES
@@ -35,6 +39,10 @@ RUN bundle config --global frozen 1 \
 # Stage: TestBuilder (production + test build)
 ##########################################
 FROM $RUBY_IMAGE as TestBuilder
+
+# https://github.com/moby/moby/issues/34715, bryanlarsen commented on 12 Sep 2018, must be unique per stage
+# Line after FROM should be unique per stage so that multiple image --cache-from in docker build works correctly
+RUN echo '=== TestBuilder ==='
 
 # ARG BUILD_TEST_PACKAGES
 # RUN apk add --update --no-cache $BUILD_TEST_PACKAGES
@@ -59,6 +67,10 @@ RUN bundle config --delete without \
 ##########################################
 FROM $RUBY_IMAGE as Test
 
+# https://github.com/moby/moby/issues/34715, bryanlarsen commented on 12 Sep 2018, must be unique per stage
+# Line after FROM should be unique per stage so that multiple image --cache-from in docker build works correctly
+RUN echo '=== Test ==='
+
 # ARG TEST_PACKAGES
 # RUN apk add --update --no-cache $TEST_PACKAGES
 
@@ -81,6 +93,10 @@ CMD ["rake", "test"]
 # Stage: Server (production, or local server)
 ##########################################
 FROM $RUBY_IMAGE as Server
+
+# https://github.com/moby/moby/issues/34715, bryanlarsen commented on 12 Sep 2018, must be unique per stage
+# Line after FROM should be unique per stage so that multiple image --cache-from in docker build works correctly
+RUN echo '=== Server ==='
 
 # Redeclare ARG otherwise it's empty after FROM
 ARG RUN_PACKAGES
