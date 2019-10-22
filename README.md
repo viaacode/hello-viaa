@@ -45,6 +45,10 @@ To run it locally [install a gitlab runner or run it via docker](https://docs.gi
 docker run --rm -t -i gitlab/gitlab-runner --help
 ```
 
+### Githooks
+
+Enable testing before commit. Install hooks with 'make git' (see Makefile).
+
 ### Openshift
 
 Openshift is based on kubernetes. It is used to deploy the Docker containers. The openshift/init.sh script initiates the Openshift environment. See [confluence](https://viaadocumentation.atlassian.net/wiki/spaces/SI/pages/938147860/Openshift+basics+for+application+developers).
@@ -68,7 +72,7 @@ git remote add *url_of_your_git_repo*
 # Hotfix branches? [hotfix/]
 # Support branches? [support/]
 # Version tag prefix? [] v
-git flow init
+make git
 ```
 #### Openshift
 
