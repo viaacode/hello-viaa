@@ -1,0 +1,12 @@
+#!/bin/bash
+echo -e "[RUBOCOP] --> Init (wait a second)"
+
+FAILS=`bundle exec rubocop | grep -o '[no0-9]* offenses detected' | awk '{print $1}'`
+
+if [ "$FAILS" == "no" ]; then
+    echo -e "[RUBOCOP] --> 👍 approved."
+    exit 0
+else
+    echo -e "[RUBOCOP] --> ✋ You've $FAILS offenses!!!"
+    exit 1
+fi

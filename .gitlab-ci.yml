@@ -8,11 +8,12 @@ stages:
   - release
 
 variables:
-  CONTAINER_BUILDER_IMAGE: $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_NAME
-  CONTAINER_TEST_BUILDER_IMAGE: $CI_REGISTRY_IMAGE/testbuilder:$CI_COMMIT_REF_NAME
-  CONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE/test:$CI_COMMIT_REF_NAME
-  CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest
-  CONTAINER_QAS_IMAGE: $CI_REGISTRY_IMAGE/qas:latest
+  CONTAINER_BUILDER_IMAGE: $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
+  CONTAINER_TEST_BUILDER_IMAGE: $CI_REGISTRY_IMAGE/testbuilder:$CI_COMMIT_REF_SLUG
+  CONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE/test:$CI_COMMIT_REF_SLUG
+  CONTAINER_SERVER_IMAGE: $CI_REGISTRY_IMAGE/server:$CI_COMMIT_REF_SLUG
+  CONTAINER_TST_IMAGE: $CI_REGISTRY_IMAGE:tst
+  CONTAINER_QAS_IMAGE: $CI_REGISTRY_IMAGE:qas
   CONTAINER_PRD_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
 
 before_script:
@@ -22,14 +23,17 @@ build:
   stage: build
   script:
     - docker pull $CONTAINER_BUILDER_IMAGE || true
-    - docker pull $CONTAINER_TEST_BUILDER_IMAGE || true
-    - docker pull $CONTAINER_TEST_IMAGE || true
-    - docker build --cache-from $CONTAINER_BUILDER_IMAGE -t $CONTAINER_BUILDER_IMAGE --target Builder .
-    - docker build --cache-from $CONTAINER_BUILDER_IMAGE,$CONTAINER_TEST_BUILDER_IMAGE -t $CONTAINER_TEST_BUILDER_IMAGE --target TestBuilder .
-    - docker build --cache-from $CONTAINER_BUILDER_IMAGE,$CONTAINER_TEST_BUILDER_IMAGE,$CONTAINER_TEST_IMAGE -t $CONTAINER_TEST_IMAGE --target Test .
+    - docker build --cache-from $CONTAINER_BUILDER_IMAGE --build-arg RELATIVE_ROUTE=$RELATIVE_ROUTE -t $CONTAINER_BUILDER_IMAGE --target Builder .
     - docker push $CONTAINER_BUILDER_IMAGE
+    - docker pull $CONTAINER_TEST_BUILDER_IMAGE || true
+    - docker build --cache-from $CONTAINER_BUILDER_IMAGE,$CONTAINER_TEST_BUILDER_IMAGE --build-arg RELATIVE_ROUTE=$RELATIVE_ROUTE -t $CONTAINER_TEST_BUILDER_IMAGE --target TestBuilder .
     - docker push $CONTAINER_TEST_BUILDER_IMAGE
+    - docker pull $CONTAINER_TEST_IMAGE || true
+    - docker build --cache-from $CONTAINER_TEST_IMAGE,$CONTAINER_TEST_BUILDER_IMAGE,$CONTAINER_BUILDER_IMAGE --build-arg RELATIVE_ROUTE=$RELATIVE_ROUTE -t $CONTAINER_TEST_IMAGE --target Test .
     - docker push $CONTAINER_TEST_IMAGE
+    - docker pull $CONTAINER_SERVER_IMAGE || true
+    - docker build --cache-from $CONTAINER_SERVER_IMAGE,$CONTAINER_TEST_IMAGE,$CONTAINER_TEST_BUILDER_IMAGE,$CONTAINER_BUILDER_IMAGE --build-arg RELATIVE_ROUTE=$RELATIVE_ROUTE -t $CONTAINER_SERVER_IMAGE --target Server .
+    - docker push $CONTAINER_SERVER_IMAGE
 
 tests:
   stage: test
@@ -52,6 +56,21 @@ tests:
 #   except:
 #     - tags
 
+# For when a non important test fails
+release_tst_override:
+  stage: test
+  when: manual
+  environment:
+    name: tst
+  script:
+    - docker pull $CONTAINER_SERVER_IMAGE
+    - docker tag $CONTAINER_SERVER_IMAGE $CONTAINER_TST_IMAGE
+    - docker push $CONTAINER_TST_IMAGE
+  allow_failure: true
+  only:
+    - develop
+    - /^feature\//
+
 # the environment variables are for Gitlab https://gitlab.com/viaa-catalogus/syncrator/environments
 # RUBY_ENV is voor in de build onderscheid te maken tussen add_(development_)dependency in de gemspec
 release_qas:
@@ -60,28 +79,21 @@ release_qas:
   # environment:
   #   name: qas
   #   url: https://my_hello_world_app.be
+  when: manual
+  environment:
+    name: qas
   script:
-    - docker pull $CONTAINER_BUILDER_IMAGE || true
-    - docker pull $CONTAINER_TEST_BUILDER_IMAGE || true
-    - docker pull $CONTAINER_TEST_IMAGE || true
-    - docker pull $CONTAINER_QAS_IMAGE || true
-    - docker build --cache-from $CONTAINER_BUILDER_IMAGE,$CONTAINER_TEST_BUILDER_IMAGE,$CONTAINER_TEST_IMAGE,$CONTAINER_QAS_IMAGE -t $CONTAINER_QAS_IMAGE .
+    - docker pull $CONTAINER_SERVER_IMAGE
+    - docker tag $CONTAINER_SERVER_IMAGE $CONTAINER_QAS_IMAGE
     - docker push $CONTAINER_QAS_IMAGE
-  only:
-    - develop
-    - /^release\//
-    - /^hotfix\//
-    - /^feature\//
 
 release_production:
   stage: release
-  when: manual
+  environment:
+    name: production
   script:
-    - docker pull $CONTAINER_BUILDER_IMAGE || true
-    - docker pull $CONTAINER_TEST_BUILDER_IMAGE || true
-    - docker pull $CONTAINER_TEST_IMAGE || true
-    - docker pull $CONTAINER_QAS_IMAGE || true
-    - docker build --cache-from $CONTAINER_BUILDER_IMAGE,$CONTAINER_TEST_BUILDER_IMAGE,$CONTAINER_TEST_IMAGE,$CONTAINER_QAS_IMAGE -t $CONTAINER_PRD_IMAGE .
+    - docker pull $CONTAINER_SERVER_IMAGE
+    - docker tag $CONTAINER_SERVER_IMAGE $CONTAINER_PRD_IMAGE
     - docker push $CONTAINER_PRD_IMAGE
   only:
     - tags
